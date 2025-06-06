@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VideoStudio Pro - Montage Vidéo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 100%);
+            color: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-areas: 
+                "toolbar toolbar toolbar"
+                "library preview timeline"
+                "properties preview timeline";
+            grid-template-columns: 300px 1fr 300px;
+            grid-template-rows: 60px 1fr 200px;
+            height: 100vh;
+            gap: 1px;
+            background: #0a0a0a;
+        }
+
+        .toolbar {
+            grid-area: toolbar;
+            background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            border-bottom: 1px solid #333;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-right: 40px;
+        }
+
+        .toolbar-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-right: 30px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4a4a4a 0%, #2a2a2a 100%);
+            border: 1px solid #555;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, #5a5a5a 0%, #3a3a3a 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        .btn.primary {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+            border-color: #ff4444;
+        }
+
+        .btn.primary:hover {
+            background: linear-gradient(135deg, #ff5252 0%, #ff4444 100%);
+        }
+
+        .library {
+            grid-area: library;
+            background: #1a1a1a;
+            border-right: 1px solid #333;
+            overflow-y: auto;
+        }
+
+        .library-header {
+            padding: 20px;
+            border-bottom: 1px solid #333;
+            background: #222;
+        }
+
+        .library-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .library-tabs {
+            display: flex;
+            gap: 5px;
+        }
+
+        .tab {
+            padding: 8px 16px;
+            background: #333;
+            border: none;
+            color: #ccc;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+            color: white;
+        }
+
+        .library-content {
+            padding: 20px;
+        }
+
+        .media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+        }
+
+        .media-item {
+            background: #2a2a2a;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .media-item:hover {
+            transform: translateY(-2px);
+            border-color: #4ecdc4;
+            box-shadow: 0 8px 25px rgba(78, 205, 196, 0.3);
+        }
+
+        .media-thumbnail {
+            width: 100%;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .media-info {
+            padding: 10px;
+        }
+
+        .media-name {
+            font-size: 12px;
+            color: #ccc;
+            margin-bottom: 4px;
+        }
+
+        .media-duration {
+            font-size: 10px;
+            color: #888;
+        }
+
+        .preview {
+            grid-area: preview;
+            background: #111;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .preview-header {
+            padding: 15px 20px;
+            background: #222;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .preview-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .preview-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .preview-canvas {
+            flex: 1;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin: 20px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .video-player {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 8px;
+        }
+
+        .player-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.7);
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .player-overlay:hover {
+            background: rgba(0,0,0,0.9);
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        .play-icon {
+            width: 0;
+            height: 0;
+            border-left: 20px solid white;
+            border-top: 12px solid transparent;
+            border-bottom: 12px solid transparent;
+            margin-left: 4px;
+        }
+
+        .properties {
+            grid-area: properties;
+            background: #1a1a1a;
+            border-left: 1px solid #333;
+            overflow-y: auto;
+        }
+
+        .properties-header {
+            padding: 20px;
+            border-bottom: 1px solid #333;
+            background: #222;
+        }
+
+        .properties-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .property-group {
+            margin-bottom: 25px;
+        }
+
+        .property-group-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #4ecdc4;
+        }
+
+        .property-item {
+            margin-bottom: 15px;
+        }
+
+        .property-label {
+            font-size: 12px;
+            color: #ccc;
+            margin-bottom: 5px;
+        }
+
+        .property-control {
+            width: 100%;
+            padding: 8px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 6px;
+            color: white;
+            font-size: 12px;
+        }
+
+        .property-control:focus {
+            outline: none;
+            border-color: #4ecdc4;
+            box-shadow: 0 0 0 2px rgba(78, 205, 196, 0.2);
+        }
+
+        .timeline {
+            grid-area: timeline;
+            background: #1a1a1a;
+            border-top: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .timeline-header {
+            padding: 15px 20px;
+            background: #222;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .timeline-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .timeline-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .timeline-content {
+            flex: 1;
+            padding: 15px;
+            overflow-x: auto;
+        }
+
+        .timeline-tracks {
+            min-height: 120px;
+            background: #111;
+            border-radius: 8px;
+            padding: 15px;
+            position: relative;
+        }
+
+        .timeline-track {
+            height: 40px;
+            background: #2a2a2a;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            position: relative;
+            border: 2px dashed #444;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-track:hover {
+            border-color: #4ecdc4;
+            background: #333;
+        }
+
+        .timeline-track.has-content {
+            border-style: solid;
+            border-color: #4ecdc4;
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+        }
+
+        .timeline-clip {
+            height: 100%;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+            border-radius: 4px;
+            position: absolute;
+            left: 10px;
+            width: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: grab;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-clip:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+        }
+
+        .timeline-clip:active {
+            cursor: grabbing;
+        }
+
+        .playhead {
+            position: absolute;
+            top: 0;
+            left: 100px;
+            width: 2px;
+            height: 100%;
+            background: #4ecdc4;
+            z-index: 10;
+            transition: left 0.1s ease;
+        }
+
+        .playhead::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: -6px;
+            width: 14px;
+            height: 14px;
+            background: #4ecdc4;
+            border-radius: 50%;
+        }
+
+        .time-indicator {
+            position: absolute;
+            top: -25px;
+            left: -20px;
+            background: #4ecdc4;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #444;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(78, 205, 196, 0.3);
+            transform: translateX(400px);
+            transition: all 0.3s ease;
+            z-index: 1001;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .zoom-slider {
+            width: 100px;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 4px;
+            background: #444;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .zoom-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #4ecdc4;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .effects-panel {
+            display: none;
+            position: absolute;
+            top: 60px;
+            left: 0;
+            right: 0;
+            background: #222;
+            border-bottom: 1px solid #333;
+            padding: 20px;
+            z-index: 100;
+        }
+
+        .effects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .effect-item {
+            background: #333;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .effect-item:hover {
+            border-color: #4ecdc4;
+            background: #444;
+        }
+
+        .effect-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .effect-name {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .recording {
+            animation: pulse 2s infinite;
+        }
+
+        .drag-over {
+            background: rgba(78, 205, 196, 0.1) !important;
+            border-color: #4ecdc4 !important;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-area {
+            border: 2px dashed #444;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #4ecdc4;
+            background: rgba(78, 205, 196, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #666;
+        }
+
+        .export-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .export-option {
+            background: #333;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .export-option:hover {
+            border-color: #4ecdc4;
+            background: #444;
+        }
+
+        .export-option.selected {
+            border-color: #4ecdc4;
+            background: rgba(78, 205, 196, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Barre d'outils -->
+        <div class="toolbar">
+            <div class="logo">VideoStudio Pro</div>
+            
+            <div class="toolbar-section">
+                <button class="btn" onclick="importMedia()">
+                    📁 Importer
+                </button>
+                <button class="btn" onclick="toggleEffects()">
+                    ✨ Effets
+                </button>
+                <button class="btn" onclick="addTransition()">
+                    🔄 Transitions
+                </button>
+                <button class="btn" onclick="addText()">
+                    📝 Texte
+                </button>
+            </div>
+
+            <div class="toolbar-section">
+                <button class="btn" onclick="play()">
+                    ▶️ Lecture
+                </button>
+                <button class="btn" onclick="pause()">
+                    ⏸️ Pause
+                </button>
+                <button class="btn" onclick="stop()">
+                    ⏹️ Stop
+                </button>
+            </div>
+
+            <div class="toolbar-section">
+                <button class="btn primary" onclick="exportVideo()">
+                    📤 Exporter
+                </button>
+                <button class="btn" onclick="saveProject()">
+                    💾 Sauvegarder
+                </button>
+            </div>
+        </div>
+
+        <!-- Panneau d'effets -->
+        <div class="effects-panel" id="effectsPanel">
+            <h3>Effets Visuels</h3>
+            <div class="effects-grid">
+                <div class="effect-item" onclick="applyEffect('blur')">
+                    <div class="effect-icon">🌫️</div>
+                    <div class="effect-name">Flou</div>
+                </div>
+                <div class="effect-item" onclick="applyEffect('sepia')">
+                    <div class="effect-icon">🟤</div>
+                    <div class="effect-name">Sépia</div>
+                </div>
+                <div class="effect-item" onclick="applyEffect('grayscale')">
+                    <div class="effect-icon">⚫</div>
+                    <div class="effect-name">Noir & Blanc</div>
+                </div>
+                <div class="effect-item" onclick="applyEffect('brightness')">
+                    <div class="effect-icon">☀️</div>
+                    <div class="effect-name">Luminosité</div>
+                </div>
+                <div class="effect-item" onclick="applyEffect('contrast')">
+                    <div class="effect-icon">🔆</div>
+                    <div class="effect-name">Contraste</div>
+                </div>
+                <div class="effect-item" onclick="applyEffect('saturate')">
+                    <div class="effect-icon">🎨</div>
+                    <div class="effect-name">Saturation</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bibliothèque média -->
+        <div class="library">
+            <div class="library-header">
+                <div class="library-title">Bibliothèque</div>
+                <div class="library-tabs">
+                    <button class="tab active" onclick="switchTab('media')">Média</button>
+                    <button class="tab" onclick="switchTab('audio')">Audio</button>
+                    <button class="tab" onclick="switchTab('images')">Images</button>
+                </div>
+            </div>
+            <div class="library-content">
+                <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-icon">📁</div>
+                    <div>Glissez vos fichiers ici<br>ou cliquez pour parcourir</div>
+                </div>
+                <input type="file" id="fileInput" class="file-input" multiple accept="video/*,audio/*,image/*" onchange="handleFileUpload(event)">
+                
+                <div class="media-grid" id="mediaGrid">
+                    <!-- Médias d'exemple -->
+                    <div class="media-item" draggable="true" ondragstart="dragStart(event)" data-type="video">
+                        <div class="media-thumbnail">🎬</div>
+                        <div class="media-info">
+                            <div class="media-name">Clip_001.mp4</div>
+                            <div class="media-duration">00:30</div>
+                        </div>
+                    </div>
+                    <div class="media-item" draggable="true" ondragstart="dragStart(event)" data-type="video">
+                        <div class="media-thumbnail">🎥</div>
+                        <div class="media-info">
+                            <div class="media-name">Intro.mp4</div>
+                            <div class="media-duration">00:15</div>
+                        </div>
+                    </div>
+                    <div class="media-item" draggable="true" ondragstart="dragStart(event)" data-type="audio">
+                        <div class="media-thumbnail">🎵</div>
+                        <div class="media-info">
+                            <div class="media-name">Musique.mp3</div>
+                            <div class="media-duration">03:25</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Aperçu vidéo -->
+        <div class="preview">
+            <div class="preview-header">
+                <div class="preview-title">Aperçu</div>
+                <div class="preview-controls">
+                    <button class="btn" onclick="toggleFullscreen()">🔍 Plein écran</button>
+                    <button class="btn" onclick="snapshot()">📸 Capture</button>
+                </div>
+            </div>
+            <div class="preview-canvas" id="previewCanvas">
+                <video id="videoPlayer" class="video-player" style="display: none;"></video>
+                <div class="player-overlay" id="playerOverlay" onclick="play()">
+                    <div class="play-icon"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Propriétés -->
+        <div class="properties">
+            <div class="properties-header">
+                <div class="properties-title">Propriétés</div>
+            </div>
+            <div style="padding: 20px;">
+                <div class="property-group">
+                    <div class="property-group-title">Transformation</div>
+                    <div class="property-item">
+                        <div class="property-label">Position X</div>
+                        <input type="number" class="property-control" value="0" onchange="updateProperty('x', this.value)">
+                    </div>
+                    <div class="property-item">
+                        <div class="property-label">Position Y</div>
+                        <input type="number" class="property-control" value="0" onchange="updateProperty('y', this.value)">
+                    </div>
+                    <div class="property-item">
+                        <div class="property-label">Échelle</div>
+                        <input type="range" class="property-control" min="0.1" max="3" step="0.1" value="1" onchange="updateProperty('scale', this.value)">
+                    </div>
+                    <div class="property-item">
+                        <div class="property-label">Rotation</div>
+                        <input type="range" class="property-control" min="0" max="360" value="0" onchange="updateProperty('rotation', this.value)">
+                    </div>
+                </div>
+
+                <div class="property-group">
+                    <div class="property-group-title">Effets</div>
+                    <div class="property-item">
+                        <div class="property-label">Opacité</div>
+                        <input type="range" class="property-control" min="0" max="1" step="0.1" value="1" onchange="updateProperty('opacity', this.value)">
+                    </div>
+                    <div class="property-item">
+                        <div class="property-label">Flou</div>
+                        <input type="range" class="property-control" min="0" max="10" value="0" onchange="updateProperty('blur', this.value)">
+                    </div>
+                    <div class="property-item">
+                        <div class="property-label">Luminosité</div>
+                        <input type="range" class="property-control" min="0" max="2" step="0.1" value="1" onchange="updateProperty('brightness', this.value)">
+                    </div>
+                </div>
+
+                <div class="property-group">
+                    <div class="property-group-title">Audio</div>
+                    <div class="property-item">
+                        <div class="property-label">Volume</div>
+                        <input type="range" class="property-control" min="0" max="1" step="0.1" value="1" onchange="updateProperty('volume', this.value)">
+                    </div>
+                    <div class="property-item">
+                        <div class="property-label">Fade In</div>
+                        <input type="number" class="property-control" value="0" onchange="updateProperty('fadeIn', this.value)">
+                    </div>
+                    <div class="property-item">
+                        <div class="property-label">Fade Out</div>
+                        <input type="number" class="property-control" value="0" onchange="updateProperty('fadeOut', this.value)">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="timeline">
+            <div class="timeline-header">
+                <div class="timeline-title">Timeline</div>
+                <div class="timeline-controls">
+                    <div class="zoom-controls">
+                        <span style="font-size: 12px;">Zoom:</span>
+                        <input type="range" class="zoom-slider" min="0.5" max="3" step="0.1" value="1" onchange="updateZoom(this.value)">
+                    </div>
+                    <button class="btn" onclick="addTrack()">+ Piste</button>
+                    <button class="btn" onclick="deleteTrack()">- Piste</button>
+                </div>
+            </div>
+            <div class="timeline-content">
+                <div class="timeline-tracks" id="timelineTracks">
+                    <div class="playhead" id="playhead">
+                        <div class="time-indicator">00:00</div>
+                    </div>
+                    <div class="timeline-track" ondrop="drop(event)" ondragover="allowDrop(event)" data-track="0">
+                        <div class="timeline-clip" style="display: none;">Clip vidéo</div>
+                    </div>
+                    <div class="timeline-track" ondrop="drop(event)" ondragover="allowDrop(event)" data-track="1">
+                        <div class="timeline-clip" style="display: none;">Audio</div>
+                    </div>
+                    <div class="timeline-track" ondrop="drop(event)" ondragover="allowDrop(event)" data-track="2">
+                        <div class="timeline-clip" style="display: none;">Effets</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modales -->
+    <div class="modal" id="exportModal">
+        <div class="modal-content">
+            <div class="modal-title">Exporter la vidéo</div>
+            <div class="modal-body">
+                <div class="export-options">
+                    <div class="export-option selected" onclick="selectExportOption(this, 'mp4')">
+                        <div style="font-size: 24px; margin-bottom: 10px;">🎬</div>
+                        <div>MP4 (H.264)</div>
+                        <div style="font-size: 12px; color: #888;">Qualité standard</div>
+                    </div>
+                    <div class="export-option" onclick="selectExportOption(this, 'webm')">
+                        <div style="font-size: 24px; margin-bottom: 10px;">🌐</div>
+                        <div>WebM</div>
+                        <div style="font-size: 12px; color: #888;">Web optimisé</div>
+                    </div>
+                    <div
